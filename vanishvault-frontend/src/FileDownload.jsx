@@ -5,11 +5,20 @@ const FileDownload = () => {
   const [filename, setFilename] = useState("");
 
   const handleDownload = async () => {
+    if (!filename) {
+      alert("Please enter a filename");
+      return;
+    }
+  
     try {
       const response = await axios.get(`http://127.0.0.1:8000/download/${filename}`, {
-        responseType: "blob", // Ensure the response is treated as a file
+        responseType: "blob",
       });
-
+  
+      if (response.status !== 200) {
+        throw new Error("File not found");
+      }
+  
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -19,8 +28,10 @@ const FileDownload = () => {
       link.remove();
     } catch (error) {
       console.error("Download failed", error);
+      alert("Download failed. File may not exist.");
     }
   };
+  
 
   return (
     <div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md">

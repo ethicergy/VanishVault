@@ -5,37 +5,34 @@ const FileUpload = () => {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
 
-  const handleUpload = async (event) => {
-    event.preventDefault();
+const handleUpload = async (event) => {
+  event.preventDefault();
+  if (!file) {
+    setMessage("Please select a file");
+    return;
+  }
 
-    const fileInput = document.querySelector('input[type="file"]');
-    if (!fileInput.files.length) {
-        alert("Please select a file");
-        return;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch("http://127.0.0.1:8000/upload/", {
+      method: "POST",
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`Upload failed: ${response.status}`);
     }
 
-    const formData = new FormData();
-    formData.append("file", fileInput.files[0]);  // <-- Make sure the key matches FastAPI
-
-    try {
-        const response = await fetch("http://127.0.0.1:8000/upload/", {
-            method: "POST",
-            body: formData
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorData.detail}`);
-        }
-
-        const data = await response.json();
-        console.log("Upload Success:", data);
-    } catch (error) {
-        console.error("Error:", error);
-        alert("Upload failed. Check console for details.");
-    }
+    const data = await response.json();
+    setMessage(`Upload successful: ${data.filename}`);  // ✅ Display filename
+  } catch (error) {
+    setMessage("Upload failed.");
+  }
 };
 
+  
 
   return (
     <div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md">
