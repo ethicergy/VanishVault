@@ -6,7 +6,18 @@ import os
 
 from encryption import encrypt_data, generate_key, decrypt_data
 
+from fastapi.middleware.cors import CORSMiddleware
+
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # Change this to [""] for security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 if not os.path.exists("secret.key"):
     with open("secret.key", "wb") as key_file:
