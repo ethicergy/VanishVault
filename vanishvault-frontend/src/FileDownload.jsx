@@ -36,7 +36,7 @@ const FileDownload = () => {
   return (
     <div className="p-6 max-w-md mx-auto bg-white rounded-xl shadow-md">
       <input type="text" placeholder="Enter filename" value={filename} onChange={(e) => setFilename(e.target.value)} />
-      <button onClick={handleDownload} className="bg-green-500 text-white px-4 py-2 rounded">
+      <button onClick={handleDownload} className="bg-blue-500 text-white px-4 py-2 rounded dwnbtn">
         Download
       </button>
     </div>
