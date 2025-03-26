@@ -41,6 +41,7 @@ async def root():
 
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
     file_path = os.path.join(UPLOAD_DIR, file.filename)
 
     file_content = await file.read()
