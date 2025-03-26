@@ -35,6 +35,10 @@ cipher = Fernet(key)
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+@app.get("/")
+async def root():
+    return {"message": "enthua vende"}
+
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
     file_path = os.path.join(UPLOAD_DIR, file.filename)
