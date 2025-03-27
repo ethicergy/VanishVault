@@ -3,7 +3,22 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
+from fastapi_jwt_auth import AuthJWT
+from fastapi import Depends
+
 from encryption import encrypt_data, decrypt_data  # Ensure encryption.py exists
+
+from pathlib import Path
+import re
+
+def secure_filename(filename: str) -> str:
+    return re.sub(r'[^a-zA-Z0-9_.-]', '_', filename)
+
+class Settings:
+    authjwt_secret_key = "your_super_secret_key"
+
+def get_config():
+    return Settings()
 
 app = FastAPI()
 
@@ -29,25 +44,33 @@ async def root():
 
 # 🔹 File Upload
 @app.post("/upload/")
-async def upload_file(file: UploadFile = File(...)):
-    # Save original file
-    original_path = os.path.join(UPLOAD_ORIGINAL, file.filename)
-    file_content = await file.read()
+async def upload_file(file: UploadFile = File(...), Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()  # Require authentication
+
+    filename = secure_filename(file.filename)
+    
+    original_path = os.path.join(UPLOAD_ORIGINAL, filename)
+    encrypted_path = os.path.join(UPLOAD_ENC, filename + ".enc")
+
+    # Save original file in chunks
     with open(original_path, "wb") as f:
-        f.write(file_content)
+        while chunk := await file.read(4096):
+            f.write(chunk)
 
     # Encrypt and save encrypted file
-    encrypted_content = encrypt_data(file_content)
-    encrypted_path = os.path.join(UPLOAD_ENC, file.filename + ".enc")
-    with open(encrypted_path, "wb") as f:
-        f.write(encrypted_content)
+    with open(original_path, "rb") as f, open(encrypted_path, "wb") as ef:
+        ef.write(encrypt_data(f.read()))
 
-    return {"message": "File uploaded & encrypted successfully", "filename": file.filename}
+    return {"message": "File uploaded & encrypted successfully", "filename": filename}
+
 
 # 🔹 Secure File Download
 @app.get("/download/{filename}")
-async def download_file(filename: str):
-    encrypted_path = os.path.join(UPLOAD_ENC, filename + ".enc")  # Ensure correct path
+async def download_file(filename: str, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()  # Require valid token
+
+    filename = secure_filename(filename)
+    encrypted_path = os.path.join(UPLOAD_ENC, filename + ".enc")
 
     if not os.path.exists(encrypted_path):
         raise HTTPException(status_code=404, detail="File not found")
@@ -71,17 +94,20 @@ async def file_list():
 
 # 🔹 Delete File (Both Encrypted & Original)
 @app.delete("/delete/{filename}")
-async def delete_file(filename: str):
+async def delete_file(filename: str, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()  # Require authentication
+
+    filename = secure_filename(filename)
     original_path = os.path.join(UPLOAD_ORIGINAL, filename)
     encrypted_path = os.path.join(UPLOAD_ENC, filename + ".enc")
 
     if os.path.exists(original_path):
         os.remove(original_path)
-    
+
     if os.path.exists(encrypted_path):
         os.remove(encrypted_path)
 
     if not os.path.exists(original_path) and not os.path.exists(encrypted_path):
         return {"message": f"File '{filename}' deleted successfully"}
-    
+
     raise HTTPException(status_code=404, detail="File not found")

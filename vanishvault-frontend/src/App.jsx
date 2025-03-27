@@ -1,5 +1,6 @@
 import FileUpload from "./FileUpload";
 import FileDownload from "./FileDownload";
+import FileLister from "./FileLister"; // Import the new component
 
 function App() {
   return (
@@ -8,10 +9,10 @@ function App() {
         <h1 className="text-3xl font-bold text-gray-800 mb-6">VanishVault</h1>
         <FileUpload />
         <FileDownload />
+        <FileLister />  {/* Add file listing component here */}
       </div>
     </div>
   );
 }
-
 
 export default App;
